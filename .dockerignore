@@ -1,0 +1,40 @@
+# ===============================
+# Proyecto Maestro(s) — .dockerignore
+# ===============================
+
+# Archivos de dependencias locales
+.poetry/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de control de versiones
+.git
+.gitignore
+
+# Configuración de IDEs/editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de entorno
+.env
+*.env
+
+# Archivos temporales
+*.log
+*.tmp
+*.bak
+
+# Carpeta de uploads si no quieres versionarla dentro del contenedor
+uploads/
+
+# Archivos de tests (puedes comentar si quieres incluirlos en la imagen)
+tests/

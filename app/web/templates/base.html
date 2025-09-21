@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Proyecto Maestro(s){% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=League+Spartan:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    <div class="pm-shell">
+      <header class="pm-nav" role="navigation">
+        <div class="pm-nav__content">
+          <a class="pm-nav__brand" href="{{ url_for('home.home_page') }}">
+            <span class="pm-nav__logo">PM(s)</span>
+            <span class="pm-nav__title">Proyecto Maestro(s)</span>
+          </a>
+          <nav class="pm-nav__links" aria-label="Navegación principal">
+            <a href="{{ url_for('home.home_page') }}">Inicio</a>
+            <a href="{{ url_for('obras.obras_page') }}">Obras</a>
+            <a href="{{ url_for('autores.autores_page') }}">Autores</a>
+          </nav>
+        </div>
+      </header>
+
+      <main id="contenido" tabindex="-1" class="pm-main">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="pm-footer" role="contentinfo">
+        <div class="pm-footer__content">
+          <p class="pm-footer__title">Proyecto Maestro(s)</p>
+          <p class="pm-footer__text">Datos abiertos, cultura cívica y memoria urbana.</p>
+          <small class="pm-footer__meta">Hecho en Medellín · {{ current_year | default('2025') }}</small>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

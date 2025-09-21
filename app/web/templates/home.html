@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio · Proyecto Maestro(s){% endblock %}
+
+{% block content %}
+  <section class="pm-landing" aria-labelledby="landing-title">
+    <div class="pm-landing__content">
+      <h1 id="landing-title" class="pm-landing__title">Cartografía de las obras públicas de Medellín</h1>
+      <p class="pm-landing__subtitle">Explora el patrimonio artístico y urbano de la ciudad.</p>
+      <div class="pm-landing__actions">
+        <a class="pm-btn" href="{{ url_for('obras.obras_page') }}">Catálogo de Obras</a>
+        <a class="pm-btn pm-btn--ghost" href="{{ url_for('autores.autores_page') }}">Catálogo de Autores</a>
+        <a class="pm-btn pm-btn--ghost" href="{{ url_for('mapa.mapa_page') }}">Ver mapa interactivo</a>
+      </div>
+    </div>
+  </section>
+{% endblock %}

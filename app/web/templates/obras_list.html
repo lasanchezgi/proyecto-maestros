@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Obras · Proyecto Maestro(s){% endblock %}
+
+{% block content %}
+  <section class="pm-section" aria-labelledby="obras-listado">
+    <div class="pm-section__header">
+      <h2 id="obras-listado" class="pm-section__title">Catálogo de obras</h2>
+      <p class="pm-section__lead">Filtra y recorre las intervenciones artísticas y urbanas de la ciudad.</p>
+    </div>
+
+    {% if error %}
+      <div class="pm-alert" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="get" action="{{ url_for('obras.obras_page') }}" class="pm-form" novalidate>
+      <input type="hidden" name="offset" value="0" />
+      <div class="pm-form__grid">
+        <div class="pm-field">
+          <label for="f-autor">Autor</label>
+          <input id="f-autor" name="autor" type="text" value="{{ filters.autor }}" placeholder="Ej. Botero" />
+        </div>
+        <div class="pm-field">
+          <label for="f-comuna">Comuna</label>
+          <input id="f-comuna" name="comuna" type="text" value="{{ filters.comuna }}" placeholder="Ej. La Candelaria" />
+        </div>
+        <div class="pm-field">
+          <label for="f-tipo">Tipo</label>
+          <input id="f-tipo" name="tipo" type="text" value="{{ filters.tipo }}" placeholder="Escultura, mural…" />
+        </div>
+        <div class="pm-field">
+          <label for="f-anio">Año</label>
+          <input id="f-anio" name="anio" inputmode="numeric" pattern="[0-9]*" value="{{ filters.anio }}" placeholder="Ej. 1998" />
+        </div>
+        <div class="pm-field pm-field--compact">
+          <label for="f-limit">Resultados</label>
+          <input id="f-limit" name="limit" type="number" min="1" max="100" value="{{ filters.limit }}" />
+        </div>
+      </div>
+      <details class="pm-advanced">
+        <summary>Filtro geográfico</summary>
+        <div class="pm-form__grid pm-form__grid--two">
+          <div class="pm-field">
+            <label for="f-near">Coordenadas (lat,lon)</label>
+            <input id="f-near" name="near" type="text" value="{{ filters.near }}" placeholder="6.24,-75.58" />
+          </div>
+          <div class="pm-field">
+            <label for="f-radius">Radio (km)</label>
+            <input id="f-radius" name="radius_km" type="number" step="0.1" min="0" value="{{ filters.radius_km }}" />
+          </div>
+        </div>
+      </details>
+      <div class="pm-actions">
+        <button type="submit" class="pm-btn">Aplicar filtros</button>
+        <a class="pm-btn pm-btn--ghost" href="{{ url_for('obras.obras_page') }}">Limpiar</a>
+      </div>
+    </form>
+
+    <div class="pm-meta">
+      <p class="pm-meta__count">{{ meta.total }} obras registradas</p>
+      <p class="pm-meta__page">Página {{ meta.page }} de {{ meta.total_pages }} · Mostrando {{ items | length }} de {{ meta.limit }}</p>
+    </div>
+
+    {% if empty_message %}
+      <p class="pm-empty">{{ empty_message }}</p>
+    {% endif %}
+
+    <div class="pm-table-wrap" role="region" aria-live="polite" aria-label="Resultados de obras">
+      <table class="pm-table">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Autor</th>
+            <th scope="col">Año</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Comuna</th>
+            <th scope="col">Barrio</th>
+            <th scope="col">Dirección</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if items %}
+            {% for obra in items %}
+              <tr>
+                <td data-label="ID">{{ obra.id }}</td>
+                <td data-label="Nombre">{{ obra.nombre }}</td>
+                <td data-label="Autor">{{ obra.autor }}</td>
+                <td data-label="Año">{{ obra.anio or '—' }}</td>
+                <td data-label="Tipo">{{ obra.tipo or '—' }}</td>
+                <td data-label="Comuna">{{ obra.comuna or '—' }}</td>
+                <td data-label="Barrio">{{ obra.barrio or '—' }}</td>
+                <td data-label="Dirección">{{ obra.direccion or '—' }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="pm-empty">No se encontraron obras con los filtros aplicados.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="pm-pagination" aria-label="Paginación de obras">
+      <div class="pm-pagination__cluster">
+        {% if pagination.prev %}
+          <a class="pm-btn pm-btn--ghost" href="{{ pagination.prev }}" role="button">← Anterior</a>
+        {% else %}
+          <span class="pm-btn pm-btn--ghost" aria-disabled="true" style="pointer-events:none; opacity:0.4;">← Anterior</span>
+        {% endif %}
+        <span class="pm-pagination__info">Página {{ meta.page }}</span>
+        {% if pagination.next %}
+          <a class="pm-btn pm-btn--ghost" href="{{ pagination.next }}" role="button">Siguiente →</a>
+        {% else %}
+          <span class="pm-btn pm-btn--ghost" aria-disabled="true" style="pointer-events:none; opacity:0.4;">Siguiente →</span>
+        {% endif %}
+      </div>
+      <div class="pm-pagination__summary">
+        <span>Offset {{ meta.offset }}</span>
+      </div>
+    </nav>
+  </section>
+{% endblock %}

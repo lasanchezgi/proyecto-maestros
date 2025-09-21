@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Autores · Proyecto Maestro(s){% endblock %}
+
+{% block content %}
+  <section class="pm-section" aria-labelledby="autores-listado">
+    <div class="pm-section__header">
+      <h2 id="autores-listado" class="pm-section__title">Autores de obras públicas</h2>
+      <p class="pm-section__lead">Explora quiénes son los y las creadoras detrás de las intervenciones urbanas de Medellín.</p>
+    </div>
+
+    {% if error %}
+      <div class="pm-alert" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="get" action="{{ url_for('autores.autores_page') }}" class="pm-form" novalidate>
+      <input type="hidden" name="offset" value="0" />
+      <div class="pm-form__grid">
+        <div class="pm-field">
+          <label for="f-nombre">Nombre</label>
+          <input id="f-nombre" name="nombre" type="text" value="{{ filters.nombre }}" placeholder="Ej. Botero" />
+        </div>
+        <div class="pm-field pm-field--compact">
+          <label for="f-min">Mín. obras</label>
+          <input id="f-min" name="min_obras" type="number" min="0" value="{{ filters.min_obras }}" />
+        </div>
+        <div class="pm-field pm-field--compact">
+          <label for="f-max">Máx. obras</label>
+          <input id="f-max" name="max_obras" type="number" min="0" value="{{ filters.max_obras }}" />
+        </div>
+        <div class="pm-field pm-field--compact">
+          <label for="f-limit">Resultados</label>
+          <input id="f-limit" name="limit" type="number" min="1" max="100" value="{{ filters.limit }}" />
+        </div>
+      </div>
+      <div class="pm-actions">
+        <button type="submit" class="pm-btn">Aplicar filtros</button>
+        <a class="pm-btn pm-btn--ghost" href="{{ url_for('autores.autores_page') }}">Limpiar</a>
+      </div>
+    </form>
+
+    <div class="pm-meta">
+      <p class="pm-meta__count">{{ meta.total }} autores encontrados</p>
+      <p class="pm-meta__page">Página {{ meta.page }} de {{ meta.total_pages }} · Mostrando {{ items | length }} de {{ meta.limit }}</p>
+    </div>
+
+    {% if empty_message %}
+      <p class="pm-empty">{{ empty_message }}</p>
+    {% endif %}
+
+    <div class="pm-table-wrap" role="region" aria-live="polite" aria-label="Resultados de autores">
+      <table class="pm-table">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Autor</th>
+            <th scope="col">Obras registradas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if items %}
+            {% for autor in items %}
+              <tr>
+                <td data-label="ID">{{ autor.id }}</td>
+                <td data-label="Autor">{{ autor.nombre }}</td>
+                <td data-label="Obras registradas">{{ autor.total_obras }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="3" class="pm-empty">No hay autores para mostrar.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="pm-pagination" aria-label="Paginación de autores">
+      <div class="pm-pagination__cluster">
+        {% if pagination.prev %}
+          <a class="pm-btn pm-btn--ghost" href="{{ pagination.prev }}" role="button">← Anterior</a>
+        {% else %}
+          <span class="pm-btn pm-btn--ghost" aria-disabled="true" style="pointer-events:none; opacity:0.4;">← Anterior</span>
+        {% endif %}
+        <span class="pm-pagination__info">Página {{ meta.page }}</span>
+        {% if pagination.next %}
+          <a class="pm-btn pm-btn--ghost" href="{{ pagination.next }}" role="button">Siguiente →</a>
+        {% else %}
+          <span class="pm-btn pm-btn--ghost" aria-disabled="true" style="pointer-events:none; opacity:0.4;">Siguiente →</span>
+        {% endif %}
+      </div>
+      <div class="pm-pagination__summary">
+        <span>Offset {{ meta.offset }}</span>
+      </div>
+    </nav>
+  </section>
+{% endblock %}

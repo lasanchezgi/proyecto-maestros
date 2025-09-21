@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Mapa · Proyecto Maestro(s){% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+  <section class="pm-section" aria-labelledby="mapa-title">
+    <div class="pm-section__header">
+      <h2 id="mapa-title" class="pm-section__title">Mapa de obras públicas</h2>
+      <p class="pm-section__lead">Visualiza las esculturas y obras urbanas más representativas de Medellín.</p>
+    </div>
+    <div id="map"></div>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('map');
+      if (!window.L) {
+        container.textContent = 'Leaflet no está disponible.';
+        console.error('Leaflet no está disponible');
+        return;
+      }
+
+      const map = L.map(container, { zoomControl: true });
+      map.setView([6.2442, -75.5812], 12);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      fetch('{{ url_for("mapa.obras_geo") }}')
+        .then(resp => resp.json())
+        .then(data => {
+          const markers = [];
+          (data.items || []).forEach(obra => {
+            if (obra.lat != null && obra.lon != null) {
+              const marker = L.marker([obra.lat, obra.lon]).addTo(map);
+              marker.bindPopup(`
+                <b>${obra.nombre}</b><br>
+                Autor: ${obra.autor || 'Sin registro'}<br>
+                Año: ${obra.anio || 'Desconocido'}<br>
+                Tipo: ${obra.tipo || 'N/D'}<br>
+                Comuna: ${obra.comuna || 'N/D'}
+              `);
+              markers.push(marker);
+            }
+          });
+
+          if (markers.length) {
+            const group = L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.2));
+          }
+        })
+        .catch(err => {
+          console.error('Error cargando obras_geo', err);
+          container.insertAdjacentHTML('beforeend', '<p class="pm-alert">No fue posible cargar las coordenadas.</p>');
+        });
+
+      setTimeout(() => map.invalidateSize(), 200);
+    });
+  </script>
+{% endblock %}

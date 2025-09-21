@@ -1,0 +1,25 @@
+[project]
+name = "proyecto-maestros"
+version = "0.1.0"
+description = "Plataforma cultural para explorar esculturas públicas de Medellín"
+authors = [
+    { name = "Laura Sanchez Giraldo", email = "laurasanchezgiraldo@outlook.es" }
+]
+readme = "README.md"
+requires-python = ">=3.13"
+
+dependencies = [
+    "flask>=3.1",
+    "psycopg2>=2.9",
+    "python-dotenv>=1.0",
+    "gunicorn>=23.0"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4"
+black = "^24.8"
+flake8 = "^7.1"
