@@ -2,16 +2,22 @@
 from __future__ import annotations
 
 import csv
+import sys
+from contextlib import closing
 from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
 from app.utils.database import get_connection
 
 load_dotenv()
 
-DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "esculturas-publicas-medellin-limpio.csv"
+DATA_PATH = PROJECT_ROOT / "data" / "esculturas-publicas-medellin-limpio.csv"
 
 
 def _parse_year(value: Optional[str]) -> Optional[int]:
@@ -37,11 +43,11 @@ def load_data() -> None:
     if not DATA_PATH.exists():
         raise FileNotFoundError(f"No se encontró el CSV en {DATA_PATH}")
 
-    conn = get_connection()
     inserted_obras = 0
-    skipped_obras = 0
+    updated_obras = 0
+    missing_coords = 0
 
-    try:
+    with closing(get_connection()) as conn:
         with conn.cursor() as cur, DATA_PATH.open(encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
@@ -63,77 +69,108 @@ def load_data() -> None:
                 lat = _parse_float(row.get("latitude"))
                 lon = _parse_float(row.get("longitude"))
 
-                # Try insert avoiding duplicates by (nombre, autor, anio)
-                cur.execute(
-                    """
-                    INSERT INTO obras (
-                        nombre,
-                        autor_id,
-                        anio,
-                        tipo,
-                        comuna,
-                        barrio,
-                        direccion,
-                        descripcion,
-                        ubicacion
-                    )
-                    SELECT
-                        %s,
-                        %s,
-                        %s,
-                        %s,
-                        %s,
-                        NULL,
-                        %s,
-                        NULL,
-                        CASE
-                            WHEN %s IS NOT NULL AND %s IS NOT NULL
-                                THEN ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography
-                            ELSE NULL
-                        END
-                    WHERE NOT EXISTS (
-                        SELECT 1
-                        FROM obras o
-                        WHERE
-                            o.nombre = %s
-                            AND o.autor_id = %s
-                            AND (
-                                (o.anio = %s) OR (o.anio IS NULL AND %s IS NULL)
-                            )
-                    )
-                    RETURNING id
-                    """,
-                    (
-                        nombre,
-                        autor_id,
-                        anio,
-                        tipo,
-                        comuna,
-                        direccion,
-                        lon,
-                        lat,
-                        lon,
-                        lat,
-                        nombre,
-                        autor_id,
-                        anio,
-                        anio,
-                    ),
-                )
-                if cur.fetchone():
-                    inserted_obras += 1
+                if lat is None or lon is None:
+                    missing_coords += 1
+                    lat_db = None
+                    lon_db = None
                 else:
-                    skipped_obras += 1
+                    lat_db = lat
+                    lon_db = lon
+
+                cur.execute(
+                    "SELECT id FROM obras WHERE nombre = %s AND autor_id = %s LIMIT 1",
+                    (nombre, autor_id),
+                )
+                existing = cur.fetchone()
+
+                ubicacion_args = (lon_db, lat_db, lon_db, lat_db)
+
+                if existing:
+                    obra_id = existing[0]
+                    cur.execute(
+                        """
+                        UPDATE obras
+                        SET
+                            anio = %s,
+                            tipo = %s,
+                            comuna = %s,
+                            direccion = %s,
+                            lat = %s,
+                            lon = %s,
+                            ubicacion = CASE
+                                WHEN %s IS NOT NULL AND %s IS NOT NULL
+                                    THEN ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography
+                                ELSE NULL
+                            END
+                        WHERE id = %s
+                        """,
+                        (
+                            anio,
+                            tipo,
+                            comuna,
+                            direccion,
+                            lat_db,
+                            lon_db,
+                            *ubicacion_args,
+                            obra_id,
+                        ),
+                    )
+                    if cur.rowcount:
+                        updated_obras += 1
+                else:
+                    cur.execute(
+                        """
+                        INSERT INTO obras (
+                            nombre,
+                            autor_id,
+                            anio,
+                            tipo,
+                            comuna,
+                            barrio,
+                            direccion,
+                            descripcion,
+                            lat,
+                            lon,
+                            ubicacion
+                        )
+                        VALUES (
+                            %s,
+                            %s,
+                            %s,
+                            %s,
+                            %s,
+                            NULL,
+                            %s,
+                            NULL,
+                            %s,
+                            %s,
+                            CASE
+                                WHEN %s IS NOT NULL AND %s IS NOT NULL
+                                    THEN ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography
+                                ELSE NULL
+                            END
+                        )
+                        """,
+                        (
+                            nombre,
+                            autor_id,
+                            anio,
+                            tipo,
+                            comuna,
+                            direccion,
+                            lat_db,
+                            lon_db,
+                            *ubicacion_args,
+                        ),
+                    )
+                    inserted_obras += 1
 
         conn.commit()
-    finally:
-        conn.close()
 
-    print(
-        "✅ Carga completada. Obras insertadas: {0}, duplicados omitidos: {1}.".format(
-            inserted_obras, skipped_obras
-        )
-    )
+    print("✅ Carga completada")
+    print(f"Obras insertadas: {inserted_obras}")
+    print(f"Obras actualizadas: {updated_obras}")
+    print(f"Obras sin coordenadas: {missing_coords}")
 
 
 if __name__ == "__main__":
